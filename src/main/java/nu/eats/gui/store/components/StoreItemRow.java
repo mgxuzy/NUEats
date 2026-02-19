@@ -16,7 +16,6 @@ import java.awt.image.BufferedImage;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.util.Map;
-import java.util.Objects;
 
 import static nu.eats.gui.plaf.Constants.KEY_VARIANT;
 
@@ -77,26 +76,20 @@ public class StoreItemRow extends JButton {
 
         putClientProperty(KEY_VARIANT, ButtonVariant.SECONDARY);
 
-        model.addChangeListener(l -> {
+        model.addChangeListener(_ -> {
             switch (ButtonState.of(model)) {
                 case DISABLED -> {
-                    if (!Objects.equals(itemNameLabel.getForeground(), Theme.COLOR_PLACEHOLDER_FG)) {
-                        itemNameLabel.setForeground(Theme.COLOR_PLACEHOLDER_FG);
-                    }
+                    itemNameLabel.setForeground(Theme.COLOR_PLACEHOLDER_FG);
+
                     var strikeFont = getFont()
                             .deriveFont(Map.of(TextAttribute.STRIKETHROUGH, TextAttribute.STRIKETHROUGH_ON));
-                    if (!Objects.equals(itemNameLabel.getFont(), strikeFont)) {
-                        itemNameLabel.setFont(strikeFont);
-                    }
+
+                    itemNameLabel.setFont(strikeFont);
                 }
 
                 case DEFAULT -> {
-                    if (!Objects.equals(itemNameLabel.getFont(), getFont())) {
-                        itemNameLabel.setFont(getFont());
-                    }
-                    if (!Objects.equals(itemNameLabel.getForeground(), Theme.COLOR_FG)) {
-                        itemNameLabel.setForeground(Theme.COLOR_FG);
-                    }
+                    itemNameLabel.setFont(getFont());
+                    itemNameLabel.setForeground(Theme.COLOR_FG);
                 }
             }
         });

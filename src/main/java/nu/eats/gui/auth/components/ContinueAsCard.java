@@ -17,15 +17,9 @@ public class ContinueAsCard extends AuthCard {
     public ContinueAsCard(AuthViewModel model) {
         super();
 
-        var title = new JLabel("Welcome to NUEats");
-
-        title.setFont(Theme.FONT_BOLD_24.deriveFont(26f));
-        title.setAlignmentX(Component.CENTER_ALIGNMENT);
-
         var subtitle = new JLabel("Choose how you'd like to continue as");
 
-        subtitle.setFont(Theme.FONT_REGULAR_14);
-        // subtitle.setForeground(Theme.);
+        subtitle.setFont(Theme.FONT_REGULAR_BASE);
         subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         var customerButton = new JButton("Customer");
@@ -37,8 +31,6 @@ public class ContinueAsCard extends AuthCard {
 
         var vendorButton = new JButton("Vendor");
 
-        toolBar().setTitle("Welcome to NUEats");
-
         ButtonPreset.XL.apply(vendorButton);
         vendorButton.putClientProperty(KEY_VARIANT, ButtonVariant.SECONDARY);
         vendorButton.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -49,6 +41,8 @@ public class ContinueAsCard extends AuthCard {
         optionList.setBorder(new EmptyBorder(Theme.SPACING_2XL, Theme.SPACING_2XL, Theme.SPACING_2XL, Theme.SPACING_2XL));
         optionList.add(customerButton);
         optionList.add(vendorButton);
+
+        toolBar().setTitle("Welcome");
 
         mainContent.setLayout(new BoxLayout(mainContent, BoxLayout.Y_AXIS));
         mainContent.add(subtitle);

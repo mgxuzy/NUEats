@@ -38,18 +38,17 @@ public class LookAndFeel extends BasicLookAndFeel {
         Object themeBg = new Theme.ThemeBgColor();
 
         for (Object key : defaults.keySet().toArray()) {
-            if (key instanceof String k && k.endsWith("UI")) {
-                String componentPrefix = k.substring(0, k.length() - 2);
-                defaults.put(componentPrefix + ".background", themeBg);
+            if (key instanceof String keyText && keyText.endsWith("UI")) {
+                String componentPrefixLength = keyText.substring(0, keyText.length() - 2);
+
+                defaults.put(componentPrefixLength + ".background", themeBg);
             }
         }
 
-        // Font Overrides
-        // Font Overrides
-        UIDefaults.LazyValue fontRegular = t -> new FontUIResource(Fonts.load("Inter Regular", 12));
-        UIDefaults.LazyValue fontBold = t -> new FontUIResource(Fonts.load("Inter Bold", 12));
-        UIDefaults.LazyValue fontItalic = t -> new FontUIResource(Fonts.load("Inter Italic", 12));
-        UIDefaults.LazyValue fontBoldItalic = t -> new FontUIResource(Fonts.load("Inter Bold Italic", 12));
+        UIDefaults.LazyValue fontRegular = _ -> new FontUIResource(Fonts.load("Inter Regular", 12));
+        UIDefaults.LazyValue fontBold = _ -> new FontUIResource(Fonts.load("Inter Bold", 12));
+        UIDefaults.LazyValue fontItalic = _ -> new FontUIResource(Fonts.load("Inter Italic", 12));
+        UIDefaults.LazyValue fontBoldItalic = _ -> new FontUIResource(Fonts.load("Inter Bold Italic", 12));
 
         for (Object key : defaults.keySet().toArray()) {
             if (!(key instanceof String keyText) || !keyText.endsWith(".font")) {
@@ -62,12 +61,12 @@ public class LookAndFeel extends BasicLookAndFeel {
                 continue;
             }
 
-            String name = font.getName();
+            var fontName = font.getName();
 
-            boolean isLogical = name.equalsIgnoreCase(Font.DIALOG) ||
-                    name.equalsIgnoreCase(Font.SERIF) ||
-                    name.equalsIgnoreCase(Font.SANS_SERIF) ||
-                    name.equalsIgnoreCase(Font.MONOSPACED);
+            boolean isLogical = fontName.equalsIgnoreCase(Font.DIALOG) ||
+                    fontName.equalsIgnoreCase(Font.SERIF) ||
+                    fontName.equalsIgnoreCase(Font.SANS_SERIF) ||
+                    fontName.equalsIgnoreCase(Font.MONOSPACED);
 
             if (isLogical) {
                 UIDefaults.LazyValue value = switch (font.getStyle()) {

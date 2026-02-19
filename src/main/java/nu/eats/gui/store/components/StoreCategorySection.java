@@ -8,7 +8,7 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
 public class StoreCategorySection extends Section {
-    public StoreCategorySection(String title, JComponent content) {
+    public StoreCategorySection(String title, StoreItemList content) {
         setLayout(new BorderLayout());
         setOpaque(false);
         setBorder(new EmptyBorder(0, 0, Theme.SPACING_XL, 0));

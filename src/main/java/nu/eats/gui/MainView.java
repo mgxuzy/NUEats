@@ -5,7 +5,6 @@ import nu.eats.common.resources.Images;
 import nu.eats.domain.Vendor;
 import nu.eats.domain.cart.Cart;
 import nu.eats.domain.cart.CartItem;
-import nu.eats.domain.shared.Lists;
 import nu.eats.domain.store.Store;
 import nu.eats.domain.store.StoreItem;
 import nu.eats.gui.cart.CartView;
@@ -95,10 +94,10 @@ public class MainView extends JPanel {
     private StoreView createStoreViewForVendor(Vendor vendor) {
         Store store = new Store();
         List<StoreItem> items = switch (vendor.id()) {
-            case "hustlers" -> Lists.getCoffeeShopMenu(vendor);
-            case "quickbites" -> Lists.getQuickBitesMenu(vendor);
-            case "cians" -> Lists.getCiansDinerMenu(vendor);
-            case "nubaliwag" -> Lists.getNUBaliwagComboMenu(vendor);
+            case "hustlers" -> TestData.getCoffeeShopMenu(vendor);
+            case "quickbites" -> TestData.getQuickBitesMenu(vendor);
+            case "cians" -> TestData.getCiansDinerMenu(vendor);
+            case "nubaliwag" -> TestData.getNUBaliwagComboMenu(vendor);
             default -> Collections.emptyList();
         };
 

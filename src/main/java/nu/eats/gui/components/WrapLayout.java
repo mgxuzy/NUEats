@@ -10,7 +10,7 @@ import java.awt.*;
  * onto new rows, making it suitable for use inside scroll panes and
  * resizable containers.
  * <p>
- * See <a href="https://github.com/tips4java/tips4java/blob/main/source/WrapLayout.java">...</a>
+ * See reference implementation <a href="https://github.com/tips4java/tips4java/blob/main/source/WrapLayout.java">WrapLayout.java</a>
  */
 public class WrapLayout extends FlowLayout {
 
@@ -58,7 +58,7 @@ public class WrapLayout extends FlowLayout {
 
             // Match the container's width so the layout doesn't force horizontal expansion
             if (preferred && targetWidth != Integer.MAX_VALUE) {
-                dimension.width = targetWidth - horizontalInsetsAndGap;
+                // dimension.width -= horizontalInsetsAndGap;
             }
 
             // Shrink slightly inside a scroll pane so the container can still shrink
@@ -109,8 +109,8 @@ public class WrapLayout extends FlowLayout {
         int rowWidth = 0;
         int rowHeight = 0;
 
-        for (int i = 0, count = target.getComponentCount(); i < count; i++) {
-            Component component = target.getComponent(i);
+        for (int index = 0, count = target.getComponentCount(); index < count; index++) {
+            Component component = target.getComponent(index);
 
             if (!component.isVisible()) {
                 continue;
@@ -120,6 +120,7 @@ public class WrapLayout extends FlowLayout {
 
             if (rowWidth + componentSize.width > maxWidth) {
                 addRow(dimension, rowWidth, rowHeight);
+
                 rowWidth = 0;
                 rowHeight = 0;
             }

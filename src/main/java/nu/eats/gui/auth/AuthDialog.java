@@ -23,22 +23,12 @@ public class AuthDialog extends JDialog {
         super(owner, "Sign In", true);
 
         setUndecorated(true);
-        getRootPane().setWindowDecorationStyle(JRootPane.NONE);
 
-        setBackground(Theme.COLOR_TRANSPARENT);
+        getRootPane().setWindowDecorationStyle(JRootPane.NONE);
         getRootPane().setOpaque(false);
         getRootPane().setBackground(Theme.COLOR_BG);
 
         BoxDecoration.ensure(getRootPane()).borderRadius(Theme.RADIUS_LG);
-
-        setSize(420, 580);
-        setLocationRelativeTo(null);
-
-        // Window Resize/Drag
-        var resizeHandler = new WindowResizeHandler(rootPane, null);
-
-        addMouseListener(resizeHandler);
-        addMouseMotionListener(resizeHandler);
 
         var cardsPanel = new JPanel(new CardLayout());
         var continueAsCard = new ContinueAsCard(new AuthViewModel(new Credentials()));
@@ -52,6 +42,9 @@ public class AuthDialog extends JDialog {
         mainContent.setBorder(new EmptyBorder(Theme.SPACING_MD, Theme.SPACING_MD, Theme.SPACING_MD, Theme.SPACING_MD));
         mainContent.add(cardsPanel, BorderLayout.CENTER);
 
+        setBackground(Theme.COLOR_TRANSPARENT);
+        setSize(420, 580);
+        setLocationRelativeTo(null);
         add(mainContent);
 
         EventBus.mainBus().subscribe(AuthState.SIGNED_IN, this::handleSignedIn);

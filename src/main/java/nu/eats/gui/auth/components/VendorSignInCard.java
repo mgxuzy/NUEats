@@ -65,7 +65,7 @@ public class VendorSignInCard extends AuthCard {
         mainContent.add(new LabeledField("Username", usernameField));
         mainContent.add(Box.createVerticalStrut(Theme.SPACING_MD));
         mainContent.add(new LabeledField("Password", passwordField));
-        mainContent.add(Box.createVerticalStrut(Theme.SPACING_2XL));
+        mainContent.add(Box.createVerticalStrut(Theme.SPACING_3XL));
         mainContent.add(signInButton);
         mainContent.add(Box.createVerticalStrut(Theme.SPACING_LG));
         mainContent.add(signUpRow);
@@ -87,7 +87,7 @@ public class VendorSignInCard extends AuthCard {
         }
 
         if (usernameResult.isFailure()) {
-            JOptionPane.showMessageDialog(this, usernameResult.error(), "Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, String.join("\n", usernameResult.error()), "Error", JOptionPane.ERROR_MESSAGE);
 
             return;
         }

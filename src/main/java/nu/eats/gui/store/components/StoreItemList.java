@@ -1,31 +1,26 @@
 package nu.eats.gui.store.components;
 
+import nu.eats.gui.components.FitLayout;
 import nu.eats.gui.components.FitPanel;
 import nu.eats.gui.components.WrapLayout;
+import nu.eats.gui.components.WrapPanel;
 import nu.eats.gui.plaf.Theme;
 
 import javax.swing.*;
 import java.awt.*;
 
-public class StoreItemList extends FitPanel {
-    private final JPanel listContent;
-
+public class StoreItemList extends JPanel {
     public StoreItemList() {
-        super();
+        super(new WrapLayout(WrapLayout.LEFT, Theme.SPACING_XL, Theme.SPACING_XL));
 
-        setOpaque(false);
+        // setOpaque(false);
 
-        listContent = new JPanel(new WrapLayout(WrapLayout.LEFT, Theme.SPACING_XL, Theme.SPACING_XL));
-
-        listContent.setBackground(Color.red);
-
-        add(listContent);
+        setBackground(Color.red);
     }
 
     public void addRow(StoreItemRow row) {
-        listContent.add(row);
-        listContent.revalidate();
-        listContent.repaint();
+        add(row);
+        revalidate();
     }
 
     public void clear() {

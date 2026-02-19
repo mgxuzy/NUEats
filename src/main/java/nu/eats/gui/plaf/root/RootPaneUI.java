@@ -117,9 +117,6 @@ public class RootPaneUI extends BasicRootPaneUI {
         root.addMouseListener(windowResizeHandler);
         root.addMouseMotionListener(windowResizeHandler);
 
-        titlePane.addMouseListener(windowResizeHandler);
-        titlePane.addMouseMotionListener(windowResizeHandler);
-
         oldLayoutManager = root.getLayout();
 
         root.setLayout(new RootLayout());

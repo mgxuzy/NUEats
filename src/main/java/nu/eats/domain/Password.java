@@ -1,8 +1,8 @@
 package nu.eats.domain;
 
-import nu.eats.core.result.Failure;
-import nu.eats.core.result.Result;
-import nu.eats.core.result.Success;
+import nu.eats.core.monads.Failure;
+import nu.eats.core.monads.Result;
+import nu.eats.core.monads.Success;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -57,7 +57,7 @@ public final class Password {
             violations.add("Must contain special char");
         }
 
-        return Collections.unmodifiableList(violations);
+        return violations;
     }
 
     public String value() {

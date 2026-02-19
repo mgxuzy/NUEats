@@ -1,5 +1,6 @@
 package nu.eats.gui.auth.components;
 
+import nu.eats.domain.Password;
 import nu.eats.domain.User;
 import nu.eats.domain.Username;
 import nu.eats.domain.auth.Vendor;
@@ -73,7 +74,7 @@ public class VendorSignUpCard extends AuthCard {
         mainContent.add(new LabeledField("Password", passwordField));
         mainContent.add(Box.createVerticalStrut(Theme.SPACING_MD));
         mainContent.add(new LabeledField("Re-enter Password", confirmPasswordField));
-        mainContent.add(Box.createVerticalStrut(Theme.SPACING_2XL * 4));
+        mainContent.add(Box.createVerticalStrut(Theme.SPACING_3XL));
         mainContent.add(signUpButton);
         mainContent.add(Box.createVerticalStrut(Theme.SPACING_LG));
         mainContent.add(signInRow);
@@ -85,8 +86,6 @@ public class VendorSignUpCard extends AuthCard {
 
     private void handleSignUp(Consumer<User> signedUpHandler) {
         var storeName = storeNameField.getText();
-        var username = usernameField.getText();
-        var password = new String(passwordField.getPassword());
         var confirmPassword = new String(confirmPasswordField.getPassword());
 
         if (storeName.isBlank()) {
@@ -95,15 +94,30 @@ public class VendorSignUpCard extends AuthCard {
             return;
         }
 
-        if (!password.equals(confirmPassword)) {
+        var passwordResult = Password.create(new String(passwordField.getPassword()));
+
+        if (passwordResult.isFailure()) {
+            JOptionPane.showMessageDialog(this, String.join("\n", passwordResult.error()), "Error",
+                    JOptionPane.ERROR_MESSAGE);
+
+            return;
+        }
+
+        if (!passwordResult.value().value().equals(confirmPassword)) {
             JOptionPane.showMessageDialog(this, "Passwords do not match", "Error", JOptionPane.ERROR_MESSAGE);
 
             return;
         }
 
+        var usernameResult = Username.create(usernameField.getText());
+
+        if (usernameResult.isFailure()) {
+            JOptionPane.showMessageDialog(this, String.join("\n", usernameResult.error()), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+
         JOptionPane.showMessageDialog(this, "Vendor " + storeName + " registered successfully!", "Success",
                 JOptionPane.INFORMATION_MESSAGE);
 
-        signedUpHandler.accept(new Vendor("vd", Username.create("s").value(), ""));
+        signedUpHandler.accept(new Vendor("vd", usernameResult.value(), storeName));
     }
 }

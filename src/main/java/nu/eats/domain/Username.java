@@ -1,9 +1,12 @@
 package nu.eats.domain;
 
-import nu.eats.core.result.Failure;
-import nu.eats.core.result.Result;
-import nu.eats.core.result.Success;
+import nu.eats.core.monads.Failure;
+import nu.eats.core.monads.Result;
+import nu.eats.core.monads.Success;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.regex.Pattern;
 
 public final class Username {
@@ -11,24 +14,41 @@ public final class Username {
 
     private String value;
 
-    private Username() {
+    private Username(String value) {
+        this.value = value;
     }
 
-    public static Result<Username, String> create(String value) {
-        return new Username().setValue(value);
+    public static Result<Username, List<String>> create(String value) {
+        var violations = findViolations(value);
+
+        return violations == null ? new Success<>(new Username(value)) : new Failure<>(violations);
     }
 
     public String value() {
         return value;
     }
 
-    public Result<Username, String> setValue(String value) {
+    public Result<Username, List<String>> setValue(String value) {
+        var violations = findViolations(value);
+
+        if (violations == null) {
+            this.value = value;
+
+            return new Success<>(null);
+        } else {
+            return new Failure<>(violations);
+        }
+    }
+
+    private static List<String> findViolations(String value) {
+        List<String> violations = null;
+
         if (!USERNAME_PATTERN.matcher(value).find()) {
-            return new Failure<>("Invalid username");
+            violations = new ArrayList<>();
+
+            violations.add("Invalid username");
         }
 
-        this.value = value;
-
-        return new Success<>(this);
+        return violations;
     }
 }

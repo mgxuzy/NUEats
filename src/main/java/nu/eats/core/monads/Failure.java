@@ -1,10 +1,6 @@
-package nu.eats.core.result;
+package nu.eats.core.monads;
 
 public record Failure<T, E>(E error) implements Result<T, E> {
-    public boolean isSuccess() {
-        return false;
-    }
-
     public boolean isFailure() {
         return true;
     }

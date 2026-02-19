@@ -9,6 +9,14 @@ public class WindowResizeHandler implements MouseInputListener {
 
     private static final int BORDER_DRAG_THICKNESS = 7;
     private static final int CORNER_DRAG_WIDTH = 16;
+    private static final int GRID_COLS = 5;
+
+    private static final int POS_OUT_OF_BOUNDS = -1;
+    private static final int POS_NEAR_START = 0;
+    private static final int POS_CORNER_START = 1;
+    private static final int POS_MIDDLE = 2;
+    private static final int POS_CORNER_END = 3;
+    private static final int POS_NEAR_END = 4;
 
     private static final int[] CURSOR_MAPPING = {
             Cursor.NW_RESIZE_CURSOR, Cursor.NW_RESIZE_CURSOR, Cursor.N_RESIZE_CURSOR,
@@ -25,9 +33,8 @@ public class WindowResizeHandler implements MouseInputListener {
 
     private boolean isDraggingWindow;
     private int dragCursorType;
-    private Cursor lastCursor;
+    private Cursor lastCursor = Cursor.getDefaultCursor();
 
-    // Stable resize fields
     private Point startDrag;
     private Rectangle startBounds;
 
@@ -36,149 +43,100 @@ public class WindowResizeHandler implements MouseInputListener {
         this.titlePane = titlePane;
     }
 
-    private Window getWindow(MouseEvent event) {
+    private static int calculatePosition(int spot, int width) {
+        if (spot < BORDER_DRAG_THICKNESS) return POS_NEAR_START;
+        if (spot < CORNER_DRAG_WIDTH) return POS_CORNER_START;
+        if (spot >= width - BORDER_DRAG_THICKNESS) return POS_NEAR_END;
+        if (spot >= width - CORNER_DRAG_WIDTH) return POS_CORNER_END;
+
+        return POS_MIDDLE;
+    }
+
+    private static int getCursorType(int corner) {
+        return corner == POS_OUT_OF_BOUNDS ? 0 : CURSOR_MAPPING[corner];
+    }
+
+    private static Window getWindow(MouseEvent event) {
         Object source = event.getSource();
-        if (source instanceof Window window) {
-            return window;
-        } else if (source instanceof Component component) {
-            return SwingUtilities.getWindowAncestor(component);
-        }
+
+        if (source instanceof Window window) return window;
+        if (source instanceof Component component) return SwingUtilities.getWindowAncestor(component);
+
         return null;
+    }
+
+    private static Point toWindowPoint(MouseEvent event, Window window) {
+        Component source = (Component) event.getSource();
+
+        return source == window
+                ? event.getPoint()
+                : SwingUtilities.convertPoint(source, event.getPoint(), window);
+    }
+
+    private static boolean isResizable(Window window) {
+        if (window instanceof Frame frame)
+            return frame.isResizable() && (frame.getExtendedState() & Frame.MAXIMIZED_BOTH) == 0;
+
+        if (window instanceof Dialog dialog) return dialog.isResizable();
+
+        return false;
     }
 
     @Override
     public void mousePressed(MouseEvent event) {
+        if (rootPane.getWindowDecorationStyle() == JRootPane.NONE) return;
+
         Window window = getWindow(event);
-        if (window == null)
-            return;
+        if (window == null) return;
 
-        Frame frame = (window instanceof Frame f) ? f : null;
-        Dialog dialog = (window instanceof Dialog d) ? d : null;
+        Point point = toWindowPoint(event, window);
 
-        int frameState = (frame != null) ? frame.getExtendedState() : 0;
-
-        Point point = event.getPoint();
-        Component source = (Component) event.getSource();
-        if (source != window) {
-            point = SwingUtilities.convertPoint(source, point, window);
-        }
-
-        // Setup initial state
         startDrag = event.getLocationOnScreen();
         startBounds = window.getBounds();
 
-        // Determine action
-        if (rootPane != null && rootPane.getWindowDecorationStyle() == JRootPane.NONE) {
+        int cursorType = resolveCursorType(window, point);
+
+        if (cursorType != 0 && isResizable(window)) {
+            dragCursorType = cursorType;
+            isDraggingWindow = false;
+
             return;
         }
 
-        // Check if on TitlePane
-        boolean isOverTitle = false;
-        if (titlePane != null && titlePane.isVisible()) {
-            Point pTitle = SwingUtilities.convertPoint(window, point, titlePane);
-            if (titlePane.contains(pTitle)) {
-                isOverTitle = true;
-            }
-        }
-
-        // Calculate corner for resize
         dragCursorType = 0;
-        int corner = calculateCorner(window, point.x, point.y);
-        int cursorType = getCursorType(corner);
 
-        boolean resizable = (frame != null && frame.isResizable() && (frameState & Frame.MAXIMIZED_BOTH) == 0)
-                || (dialog != null && dialog.isResizable());
+        if (!isOverTitlePane(window, point)) {
+            isDraggingWindow = false;
 
-        if (cursorType != 0 && resizable) {
-            dragCursorType = cursorType; // Resize mode
-            isDraggingWindow = false;
-        } else if (isOverTitle) {
-            dragCursorType = 0;
-            if (frame != null && (frameState & Frame.MAXIMIZED_BOTH) == 0) {
-                isDraggingWindow = true; // Move mode
-            } else if (dialog != null) {
-                isDraggingWindow = true;
-            }
-            if ((frame != null && (frameState & Frame.MAXIMIZED_BOTH) != 0)) {
-                isDraggingWindow = false;
-            }
-        } else {
-            isDraggingWindow = false;
+            return;
         }
+
+        boolean maximized = (window instanceof Frame frame)
+                && (frame.getExtendedState() & Frame.MAXIMIZED_BOTH) != 0;
+
+        isDraggingWindow = !maximized;
     }
 
     @Override
     public void mouseDragged(MouseEvent event) {
         Window window = getWindow(event);
-        if (window == null || startDrag == null || startBounds == null)
-            return;
 
-        Point currentScreen = event.getLocationOnScreen();
-        int dx = currentScreen.x - startDrag.x;
-        int dy = currentScreen.y - startDrag.y;
+        if (window == null || startDrag == null || startBounds == null) return;
+
+        Point current = event.getLocationOnScreen();
+        int dx = current.x - startDrag.x;
+        int dy = current.y - startDrag.y;
 
         if (isDraggingWindow) {
             window.setLocation(startBounds.x + dx, startBounds.y + dy);
-        } else if (dragCursorType != 0) {
-            Rectangle bounds = new Rectangle(startBounds);
-            Dimension min = window.getMinimumSize();
 
-            switch (dragCursorType) {
-                case Cursor.N_RESIZE_CURSOR -> {
-                    bounds.y += dy;
-                    bounds.height -= dy;
-                }
-                case Cursor.S_RESIZE_CURSOR -> {
-                    bounds.height += dy;
-                }
-                case Cursor.W_RESIZE_CURSOR -> {
-                    bounds.x += dx;
-                    bounds.width -= dx;
-                }
-                case Cursor.E_RESIZE_CURSOR -> {
-                    bounds.width += dx;
-                }
-                case Cursor.NW_RESIZE_CURSOR -> {
-                    bounds.x += dx;
-                    bounds.width -= dx;
-                    bounds.y += dy;
-                    bounds.height -= dy;
-                }
-                case Cursor.NE_RESIZE_CURSOR -> {
-                    bounds.width += dx;
-                    bounds.y += dy;
-                    bounds.height -= dy;
-                }
-                case Cursor.SW_RESIZE_CURSOR -> {
-                    bounds.x += dx;
-                    bounds.width -= dx;
-                    bounds.height += dy;
-                }
-                case Cursor.SE_RESIZE_CURSOR -> {
-                    bounds.width += dx;
-                    bounds.height += dy;
-                }
-            }
-
-            // Constrain minimum size
-            if (bounds.width < min.width) {
-                bounds.width = min.width;
-                if (dragCursorType == Cursor.W_RESIZE_CURSOR || dragCursorType == Cursor.NW_RESIZE_CURSOR
-                        || dragCursorType == Cursor.SW_RESIZE_CURSOR) {
-                    bounds.x = startBounds.x + startBounds.width - min.width;
-                }
-            }
-            if (bounds.height < min.height) {
-                bounds.height = min.height;
-                if (dragCursorType == Cursor.N_RESIZE_CURSOR || dragCursorType == Cursor.NW_RESIZE_CURSOR
-                        || dragCursorType == Cursor.NE_RESIZE_CURSOR) {
-                    bounds.y = startBounds.y + startBounds.height - min.height;
-                }
-            }
-
-            window.setBounds(bounds);
-            rootPane.repaint();
+            return;
         }
+
+        if (dragCursorType == 0) return;
+
+        window.setBounds(computeResizeBounds(dx, dy, window.getMinimumSize()));
+        rootPane.repaint();
     }
 
     @Override
@@ -189,115 +147,115 @@ public class WindowResizeHandler implements MouseInputListener {
 
     @Override
     public void mouseMoved(MouseEvent event) {
-        if (rootPane.getWindowDecorationStyle() == JRootPane.NONE) {
-            return;
-        }
+        if (rootPane.getWindowDecorationStyle() == JRootPane.NONE) return;
 
         Window window = getWindow(event);
-        if (window == null)
-            return;
 
-        Frame frame = (window instanceof Frame f) ? f : null;
-        Dialog dialog = (window instanceof Dialog d) ? d : null;
+        if (window == null) return;
 
-        Point point = event.getPoint();
-        if (event.getSource() != window) {
-            point = SwingUtilities.convertPoint((Component) event.getSource(), point, window);
-        }
+        Point point = toWindowPoint(event, window);
+        int cursorType = resolveCursorType(window, point);
 
-        int cursorType = getCursorType(calculateCorner(window, point.x, point.y));
-
-        boolean isFrameResizable = (frame != null && frame.isResizable()
-                && (frame.getExtendedState() & Frame.MAXIMIZED_BOTH) == 0);
-        boolean isDialogResizable = (dialog != null && dialog.isResizable());
-
-        if (cursorType != 0 && (isFrameResizable || isDialogResizable)) {
-            window.setCursor(Cursor.getPredefinedCursor(cursorType));
-        } else {
-            window.setCursor(lastCursor);
-        }
+        window.setCursor(cursorType != 0 && isResizable(window)
+                ? Cursor.getPredefinedCursor(cursorType)
+                : lastCursor);
     }
 
     @Override
     public void mouseEntered(MouseEvent event) {
         Window window = getWindow(event);
-        if (window == null)
-            return;
+
+        if (window == null) return;
+
         lastCursor = window.getCursor();
+
         mouseMoved(event);
     }
 
     @Override
     public void mouseExited(MouseEvent event) {
         Window window = getWindow(event);
-        if (window == null)
-            return;
+
+        if (window == null) return;
+
         window.setCursor(lastCursor);
     }
 
-    // mouseClicked kept same logic
     @Override
     public void mouseClicked(MouseEvent event) {
         Window window = getWindow(event);
-        if (!(window instanceof Frame frame)) {
-            return;
-        }
 
-        if (titlePane != null) {
-            Point point = event.getPoint();
-            if (event.getSource() != window) {
-                point = SwingUtilities.convertPoint((Component) event.getSource(), point, window);
+        if (!(window instanceof Frame frame) || titlePane == null) return;
+
+        Point point = toWindowPoint(event, window);
+
+        if (!titlePane.contains(SwingUtilities.convertPoint(window, point, titlePane))) return;
+
+        boolean isDoubleLeftClick = SwingUtilities.isLeftMouseButton(event)
+                && (event.getClickCount() % 2) == 0;
+
+        if (!isDoubleLeftClick || !frame.isResizable()) return;
+
+        int state = frame.getExtendedState();
+
+        frame.setExtendedState((state & Frame.MAXIMIZED_BOTH) != 0
+                ? state & ~Frame.MAXIMIZED_BOTH
+                : state | Frame.MAXIMIZED_BOTH);
+    }
+
+    private Rectangle computeResizeBounds(int dx, int dy, Dimension min) {
+        int left = startBounds.x;
+        int top = startBounds.y;
+        int right = startBounds.x + startBounds.width;
+        int bottom = startBounds.y + startBounds.height;
+
+        switch (dragCursorType) {
+            case Cursor.N_RESIZE_CURSOR -> top = Math.min(top + dy, bottom - min.height);
+            case Cursor.S_RESIZE_CURSOR -> bottom = Math.max(bottom + dy, top + min.height);
+            case Cursor.W_RESIZE_CURSOR -> left = Math.min(left + dx, right - min.width);
+            case Cursor.E_RESIZE_CURSOR -> right = Math.max(right + dx, left + min.width);
+            case Cursor.NW_RESIZE_CURSOR -> {
+                top = Math.min(top + dy, bottom - min.height);
+                left = Math.min(left + dx, right - min.width);
             }
-            Point convertedPoint = SwingUtilities.convertPoint(window, point, titlePane);
-
-            int state = frame.getExtendedState();
-
-            if (titlePane.contains(convertedPoint)) {
-                boolean isLeftClick = SwingUtilities.isLeftMouseButton(event);
-                boolean isDoubleClick = (event.getClickCount() % 2) == 0;
-
-                if (isDoubleClick && isLeftClick && frame.isResizable()) {
-                    if ((state & Frame.MAXIMIZED_BOTH) != 0) {
-                        frame.setExtendedState(state & ~Frame.MAXIMIZED_BOTH);
-                    } else {
-                        frame.setExtendedState(state | Frame.MAXIMIZED_BOTH);
-                    }
-                }
+            case Cursor.NE_RESIZE_CURSOR -> {
+                top = Math.min(top + dy, bottom - min.height);
+                right = Math.max(right + dx, left + min.width);
+            }
+            case Cursor.SW_RESIZE_CURSOR -> {
+                bottom = Math.max(bottom + dy, top + min.height);
+                left = Math.min(left + dx, right - min.width);
+            }
+            case Cursor.SE_RESIZE_CURSOR -> {
+                bottom = Math.max(bottom + dy, top + min.height);
+                right = Math.max(right + dx, left + min.width);
             }
         }
+
+        return new Rectangle(left, top, right - left, bottom - top);
     }
 
-    private int calculateCorner(Window w, int x, int y) {
-        Insets insets = w.getInsets();
-        int xPosition = calculatePosition(x - insets.left, w.getWidth() - insets.left - insets.right);
-        int yPosition = calculatePosition(y - insets.top, w.getHeight() - insets.top - insets.bottom);
-
-        if (xPosition == -1 || yPosition == -1) {
-            return -1;
-        }
-        return yPosition * 5 + xPosition;
+    private int resolveCursorType(Window window, Point point) {
+        return getCursorType(calculateCorner(window, point.x, point.y));
     }
 
-    private int calculatePosition(int spot, int width) {
-        if (spot < BORDER_DRAG_THICKNESS) {
-            return 0;
-        }
-        if (spot < CORNER_DRAG_WIDTH) {
-            return 1;
-        }
-        if (spot >= (width - BORDER_DRAG_THICKNESS)) {
-            return 4;
-        }
-        if (spot >= (width - CORNER_DRAG_WIDTH)) {
-            return 3;
-        }
-        return 2;
+    private int calculateCorner(Window window, int x, int y) {
+        Insets insets = window.getInsets();
+
+        var leftInset = insets.left;
+        var topInset = insets.top;
+
+        int xPos = calculatePosition(x - leftInset, window.getWidth() - leftInset - insets.right);
+        int yPos = calculatePosition(y - topInset, window.getHeight() - topInset - insets.bottom);
+
+        if (xPos == POS_OUT_OF_BOUNDS || yPos == POS_OUT_OF_BOUNDS) return POS_OUT_OF_BOUNDS;
+
+        return yPos * GRID_COLS + xPos;
     }
 
-    private int getCursorType(int corner) {
-        if (corner == -1) {
-            return 0;
-        }
-        return CURSOR_MAPPING[corner];
+    private boolean isOverTitlePane(Window window, Point windowPoint) {
+        if (titlePane == null || !titlePane.isVisible()) return false;
+
+        return titlePane.contains(SwingUtilities.convertPoint(window, windowPoint, titlePane));
     }
 }
