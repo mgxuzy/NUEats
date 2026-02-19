@@ -1,0 +1,132 @@
+package nu.eats.gui.plaf;
+
+import nu.eats.common.resources.Fonts;
+import nu.eats.gui.plaf.button.ButtonUI;
+import nu.eats.gui.plaf.field.PasswordFieldUI;
+import nu.eats.gui.plaf.field.TextFieldUI;
+import nu.eats.gui.plaf.root.RootPaneUI;
+import nu.eats.gui.plaf.scroll.ScrollBarUI;
+import nu.eats.gui.plaf.scroll.ScrollPaneUI;
+import nu.eats.gui.plaf.spinner.SpinnerUI;
+
+import javax.swing.*;
+import javax.swing.plaf.FontUIResource;
+import javax.swing.plaf.basic.BasicLookAndFeel;
+import java.awt.*;
+import java.util.Map;
+
+public class LookAndFeel extends BasicLookAndFeel {
+
+    @Override
+    protected void initComponentDefaults(UIDefaults defaults) {
+        super.initComponentDefaults(defaults);
+
+        var toolkit = Toolkit.getDefaultToolkit();
+        var desktopHintsPropertyName = "awt.font.desktophints";
+
+        var desktopHints = (Map<?, ?>) toolkit
+                .getDesktopProperty(desktopHintsPropertyName);
+
+        toolkit.addPropertyChangeListener(desktopHintsPropertyName, event -> {
+            if (event.getNewValue() instanceof Map<?, ?> newDesktopHints) {
+                defaults.putAll(newDesktopHints);
+            }
+        });
+
+        defaults.putAll(desktopHints);
+
+        Object themeBg = new Theme.ThemeBgColor();
+
+        for (Object key : defaults.keySet().toArray()) {
+            if (key instanceof String k && k.endsWith("UI")) {
+                String componentPrefix = k.substring(0, k.length() - 2);
+                defaults.put(componentPrefix + ".background", themeBg);
+            }
+        }
+
+        // Font Overrides
+        // Font Overrides
+        UIDefaults.LazyValue fontRegular = t -> new FontUIResource(Fonts.load("Inter Regular", 12));
+        UIDefaults.LazyValue fontBold = t -> new FontUIResource(Fonts.load("Inter Bold", 12));
+        UIDefaults.LazyValue fontItalic = t -> new FontUIResource(Fonts.load("Inter Italic", 12));
+        UIDefaults.LazyValue fontBoldItalic = t -> new FontUIResource(Fonts.load("Inter Bold Italic", 12));
+
+        for (Object key : defaults.keySet().toArray()) {
+            if (!(key instanceof String keyText) || !keyText.endsWith(".font")) {
+                continue;
+            }
+
+            var font = defaults.getFont(keyText);
+
+            if (font == null) {
+                continue;
+            }
+
+            String name = font.getName();
+
+            boolean isLogical = name.equalsIgnoreCase(Font.DIALOG) ||
+                    name.equalsIgnoreCase(Font.SERIF) ||
+                    name.equalsIgnoreCase(Font.SANS_SERIF) ||
+                    name.equalsIgnoreCase(Font.MONOSPACED);
+
+            if (isLogical) {
+                UIDefaults.LazyValue value = switch (font.getStyle()) {
+                    case Font.BOLD -> fontBold;
+                    case Font.ITALIC -> fontItalic;
+                    case Font.BOLD | Font.ITALIC -> fontBoldItalic;
+                    default -> fontRegular;
+                };
+
+                defaults.put(keyText, value);
+            }
+        }
+    }
+
+    @Override
+    protected void initClassDefaults(UIDefaults defaults) {
+        super.initClassDefaults(defaults);
+
+        defaults.put("ButtonUI", ButtonUI.class.getName());
+        defaults.put("ToggleButtonUI", ButtonUI.class.getName());
+
+        defaults.put("TextFieldUI", TextFieldUI.class.getName());
+        defaults.put("PasswordFieldUI", PasswordFieldUI.class.getName());
+
+        defaults.put("ScrollBarUI", ScrollBarUI.class.getName());
+        defaults.put("ScrollPaneUI", ScrollPaneUI.class.getName());
+
+        defaults.put("SpinnerUI", SpinnerUI.class.getName());
+
+        defaults.put("RootPaneUI", RootPaneUI.class.getName());
+    }
+
+    @Override
+    public String getName() {
+        return "Basic";
+    }
+
+    @Override
+    public String getID() {
+        return "Basic";
+    }
+
+    @Override
+    public String getDescription() {
+        return "The Basic Look and Feel";
+    }
+
+    @Override
+    public boolean isNativeLookAndFeel() {
+        return false;
+    }
+
+    @Override
+    public boolean isSupportedLookAndFeel() {
+        return true;
+    }
+
+    @Override
+    public boolean getSupportsWindowDecorations() {
+        return true;
+    }
+}

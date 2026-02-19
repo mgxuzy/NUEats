@@ -1,0 +1,69 @@
+package nu.eats.gui.auth.components;
+
+import nu.eats.domain.Customer;
+import nu.eats.gui.components.ToolBar;
+import nu.eats.gui.plaf.Theme;
+import nu.eats.gui.plaf.button.ButtonPreset;
+import nu.eats.gui.plaf.button.ButtonVariant;
+import nu.eats.ui.auth.AuthViewModel;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import java.awt.*;
+
+import static nu.eats.gui.plaf.Constants.KEY_VARIANT;
+
+public class ContinueAsCard extends AuthCard {
+    public ContinueAsCard(AuthViewModel model) {
+        super();
+
+        var title = new JLabel("Welcome to NUEats");
+
+        title.setFont(Theme.FONT_BOLD_24.deriveFont(26f));
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        var subtitle = new JLabel("Choose how you'd like to continue as");
+
+        subtitle.setFont(Theme.FONT_REGULAR_14);
+        // subtitle.setForeground(Theme.);
+        subtitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+
+        var customerButton = new JButton("Customer");
+
+        ButtonPreset.XL.apply(customerButton);
+        customerButton.putClientProperty(KEY_VARIANT, ButtonVariant.PRIMARY);
+        customerButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        customerButton.addActionListener(_ -> model.signIn(new Customer("c-1", "Guest Customer")));
+
+        var vendorButton = new JButton("Vendor");
+
+        toolBar().setTitle("Welcome to NUEats");
+
+        ButtonPreset.XL.apply(vendorButton);
+        vendorButton.putClientProperty(KEY_VARIANT, ButtonVariant.SECONDARY);
+        vendorButton.setAlignmentX(Component.CENTER_ALIGNMENT);
+        vendorButton.addActionListener(_ -> stack(new VendorSignInCard(model)));
+
+        var optionList = new JPanel(new GridLayout(2, 1, 0, Theme.SPACING_SM));
+
+        optionList.setBorder(new EmptyBorder(Theme.SPACING_2XL, Theme.SPACING_2XL, Theme.SPACING_2XL, Theme.SPACING_2XL));
+        optionList.add(customerButton);
+        optionList.add(vendorButton);
+
+        mainContent.setLayout(new BoxLayout(mainContent, BoxLayout.Y_AXIS));
+        mainContent.add(subtitle);
+        mainContent.add(Box.createVerticalGlue());
+        mainContent.add(Box.createVerticalStrut(Theme.SPACING_SM));
+        mainContent.add(optionList);
+        mainContent.add(Box.createVerticalGlue());
+    }
+
+    @Override
+    protected ToolBar createToolBar() {
+        var toolBar = new ToolBar();
+
+        toolBar.add(createExitButton(), ToolBar.RIGHT);
+
+        return toolBar;
+    }
+}

@@ -1,0 +1,47 @@
+package nu.eats;
+
+import nu.eats.gui.MainView;
+import nu.eats.gui.auth.AuthDialog;
+import nu.eats.gui.plaf.LookAndFeel;
+
+import javax.swing.*;
+
+public class App {
+    private static final String NAME = "NUEats";
+
+    private static final int WINDOW_WIDTH = 1200;
+    private static final int WINDOW_HEIGHT = 800;
+
+    static void main() {
+        SwingUtilities.invokeLater(() -> {
+            try {
+                UIManager.setLookAndFeel(new LookAndFeel());
+            } catch (UnsupportedLookAndFeelException _) {
+                // no-op
+            }
+
+            JFrame.setDefaultLookAndFeelDecorated(true);
+            JDialog.setDefaultLookAndFeelDecorated(true);
+
+            // --- Auth ---
+            var authDialog = new AuthDialog(null);
+
+            authDialog.setVisible(true);
+
+            if (!authDialog.isSignedIn()) {
+                System.exit(0);
+            }
+
+            // --- Store ---
+            var frame = new JFrame(NAME);
+
+            frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+            frame.setContentPane(new MainView());
+
+            frame.pack();
+            frame.setSize(WINDOW_WIDTH, WINDOW_HEIGHT);
+            frame.setLocationRelativeTo(null);
+            frame.setVisible(true);
+        });
+    }
+}
